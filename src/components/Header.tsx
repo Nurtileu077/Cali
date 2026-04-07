@@ -2,121 +2,93 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-
-const navLeft = [
-  { label: "Каталог", href: "/catalog" },
-  { label: "Новинки", href: "/catalog?category=new" },
-];
-const navRight = [
-  { label: "О нас", href: "/about" },
-  { label: "Контакты", href: "/contact" },
-];
+import NavigationDrawer from "./NavigationDrawer";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const isDark = !scrolled && !drawerOpen;
+
   return (
-    <header
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
-      style={{
-        background: scrolled ? "#1B365D" : "transparent",
-        boxShadow: scrolled ? "0 1px 20px rgba(15,34,64,0.3)" : "none",
-        paddingTop: scrolled ? "12px" : "24px",
-        paddingBottom: scrolled ? "12px" : "24px",
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-
-        {/* Desktop left nav */}
-        <nav className="hidden lg:flex items-center gap-10">
-          {navLeft.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-[10px] tracking-[0.25em] uppercase transition-colors duration-300 hover:opacity-100"
-              style={{ color: "#D4C5A9", opacity: 0.7, fontFamily: "var(--font-sans)" }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Logo — always centered */}
-        <Link href="/" className="flex flex-col items-center mx-auto lg:mx-0">
-          <span
-            className="font-serif italic leading-none"
-            style={{ fontSize: "1.75rem", fontWeight: 300, color: "#D4C5A9", letterSpacing: "0.02em" }}
-          >
-            cali
-          </span>
-          <span
-            className="font-sans text-[8px] tracking-[0.45em] uppercase"
-            style={{ color: "#D4C5A9", opacity: 0.7, marginTop: "-1px" }}
-          >
-            couturier
-          </span>
-        </Link>
-
-        {/* Desktop right nav */}
-        <nav className="hidden lg:flex items-center gap-10">
-          {navRight.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-[10px] tracking-[0.25em] uppercase transition-colors duration-300"
-              style={{ color: "#D4C5A9", opacity: 0.7, fontFamily: "var(--font-sans)" }}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Mobile controls */}
-        <div className="lg:hidden flex items-center gap-4">
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Menu"
-            style={{ color: "#D4C5A9" }}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-              {mobileOpen
-                ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                : <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
-              }
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      <div
-        className="lg:hidden overflow-hidden transition-all duration-500"
+    <>
+      <header
+        className="fixed top-0 left-0 right-0 z-40 transition-all duration-300"
         style={{
-          maxHeight: mobileOpen ? "320px" : "0",
-          background: "#1B365D",
+          background: scrolled ? "#fff" : "transparent",
+          borderBottom: scrolled ? "1px solid rgba(0,0,0,0.08)" : "none",
         }}
       >
-        <nav className="flex flex-col items-center gap-6 py-8">
-          {[...navLeft, ...navRight].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className="text-[10px] tracking-[0.3em] uppercase"
-              style={{ color: "#D4C5A9", opacity: 0.75 }}
+        <div className="max-w-screen-xl mx-auto px-5 md:px-8 h-14 md:h-16 flex items-center justify-between">
+
+          {/* Left: hamburger */}
+          <button
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Меню"
+            className="flex flex-col justify-center gap-[5px] w-8 h-8"
+          >
+            <span className="block h-[1px] w-5 transition-colors" style={{ background: isDark ? "#D4C5A9" : "#1B365D" }} />
+            <span className="block h-[1px] w-5 transition-colors" style={{ background: isDark ? "#D4C5A9" : "#1B365D" }} />
+          </button>
+
+          {/* Center: logo */}
+          <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+            <span
+              className="font-serif italic leading-none"
+              style={{
+                fontSize: "1.5rem",
+                fontWeight: 300,
+                color: isDark ? "#D4C5A9" : "#1B365D",
+                letterSpacing: "0.02em",
+                transition: "color 0.3s",
+              }}
             >
-              {item.label}
+              cali
+            </span>
+            <span
+              className="text-[7px] tracking-[0.45em] uppercase"
+              style={{
+                fontFamily: "var(--font-sans, Montserrat, sans-serif)",
+                color: isDark ? "rgba(212,197,169,0.65)" : "rgba(27,54,93,0.6)",
+                marginTop: "-1px",
+                transition: "color 0.3s",
+              }}
+            >
+              couturier
+            </span>
+          </Link>
+
+          {/* Right: account + cart */}
+          <div className="flex items-center gap-4">
+            <Link href="/login" aria-label="Аккаунт">
+              <svg
+                className="w-5 h-5 transition-colors"
+                style={{ color: isDark ? "#D4C5A9" : "#1B365D" }}
+                fill="none" stroke="currentColor" strokeWidth={1.3} viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z" />
+              </svg>
             </Link>
-          ))}
-        </nav>
-      </div>
-    </header>
+            <Link href="/cart" aria-label="Корзина">
+              <svg
+                className="w-5 h-5 transition-colors"
+                style={{ color: isDark ? "#D4C5A9" : "#1B365D" }}
+                fill="none" stroke="currentColor" strokeWidth={1.3} viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-10 2a2 2 0 100 4 2 2 0 000-4z" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <NavigationDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+    </>
   );
 }

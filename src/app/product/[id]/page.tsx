@@ -1,111 +1,161 @@
 "use client";
 
+import { use, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { use } from "react";
-
-const productData: Record<string, { name: string; price: string; category: string; description: string; details: string[]; sizes: string[] }> = {
-  "1": { name: "Платье «Элегия»", price: "185 000 ₸", category: "Вечерние платья", description: "Изысканное вечернее платье из итальянского шёлка с драпировкой ручной работы. Утончённый силуэт подчёркивает фигуру, создавая образ настоящей королевы.", details: ["100% итальянский шёлк", "Ручная драпировка", "Потайная молния", "Подкладка из натурального шёлка"], sizes: ["XS", "S", "M", "L"] },
-  "2": { name: "Костюм «Аврора»", price: "245 000 ₸", category: "Костюмы", description: "Элегантный костюм-двойка из японской шерсти. Приталенный жакет с атласной подкладкой и прямые брюки с высокой посадкой.", details: ["Японская шерсть премиум", "Атласная подкладка", "Пуговицы ручной работы", "Итальянская фурнитура"], sizes: ["XS", "S", "M", "L", "XL"] },
-  "3": { name: "Блуза «Грация»", price: "78 000 ₸", category: "Блузы", description: "Воздушная блуза из французского шифона с изящными рукавами-буфами и перламутровыми пуговицами.", details: ["Французский шифон", "Перламутровые пуговицы", "Свободный крой", "Подходит для офиса и выхода"], sizes: ["XS", "S", "M", "L"] },
-};
+import { products } from "@/lib/products";
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const product = productData[id] || productData["1"];
+  const product = products.find((p) => p.id === Number(id)) || products[0];
   const [selectedSize, setSelectedSize] = useState("");
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const sections = [
+    { key: "details", label: "Подробнее", content: product.details?.join(", ") || "" },
+    { key: "delivery", label: "Доставка и возврат", content: "Бесплатная доставка по Казахстану от 3 дней. Возврат в течение 14 дней." },
+    { key: "care", label: "Уход за изделием", content: "Деликатная стирка при 30°C. Не отбеливать. Гладить при низкой температуре." },
+    { key: "sizes", label: "Таблица размеров", content: "XS — 40–42, S — 42–44, M — 44–46, L — 46–48, XL — 48–50" },
+  ];
 
   return (
-    <div className="pt-28 pb-24">
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Breadcrumb */}
-        <nav className="mb-8 flex items-center gap-2 text-xs text-navy/50">
-          <Link href="/" className="hover:text-navy transition-colors">Главная</Link>
-          <span>/</span>
-          <Link href="/catalog" className="hover:text-navy transition-colors">Каталог</Link>
-          <span>/</span>
-          <span className="text-navy">{product.name}</span>
-        </nav>
+    <div className="pt-14 md:pt-16 min-h-screen bg-white">
+      {/* Breadcrumb */}
+      <div className="max-w-screen-xl mx-auto px-5 md:px-8 py-4 hidden md:flex items-center gap-2 text-xs" style={{ color: "#999" }}>
+        <Link href="/" className="hover:text-navy transition-colors">Главная</Link>
+        <span>/</span>
+        <Link href="/catalog" className="hover:text-navy transition-colors">Каталог</Link>
+        <span>/</span>
+        <span style={{ color: "#1B365D" }}>{product.name}</span>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          {/* Product image */}
-          <div className="aspect-[3/4] bg-gradient-to-br from-navy via-navy-light to-navy-dark relative overflow-hidden">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="font-serif text-[12rem] text-cream/10 italic">C</span>
+      {/* 3-column layout — like therlgn */}
+      <div className="max-w-screen-xl mx-auto px-5 md:px-8 md:grid md:grid-cols-[280px_1fr_280px] md:gap-0">
+
+        {/* LEFT: Product info */}
+        <div className="hidden md:block py-8 pr-8 border-r" style={{ borderColor: "rgba(0,0,0,0.07)" }}>
+          <p className="text-xs mb-1" style={{ color: "#b8a88a" }}>{product.category}</p>
+          <h1 className="font-serif text-2xl font-light italic mb-1" style={{ color: "#1B365D" }}>
+            {product.name}
+          </h1>
+          <p className="text-lg mb-6" style={{ color: "#1B365D" }}>{product.price}</p>
+
+          <p className="text-sm leading-relaxed mb-8" style={{ color: "rgba(27,54,93,0.65)" }}>
+            {product.description}
+          </p>
+
+          {/* Accordion sections */}
+          <div className="border-t" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+            {sections.map((s) => (
+              <div key={s.key} className="border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+                <button
+                  onClick={() => setOpenSection(openSection === s.key ? null : s.key)}
+                  className="w-full flex items-center justify-between py-4 text-sm text-left"
+                  style={{ color: "#1B365D" }}
+                >
+                  {s.label}
+                  <svg
+                    className="w-3.5 h-3.5 transition-transform duration-300"
+                    style={{ transform: openSection === s.key ? "rotate(180deg)" : "rotate(0)", color: "#b8a88a" }}
+                    fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {openSection === s.key && (
+                  <p className="pb-4 text-sm leading-relaxed" style={{ color: "rgba(27,54,93,0.6)" }}>
+                    {s.content}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CENTER: Image */}
+        <div className="relative" style={{ background: "#f5f5f3" }}>
+          <div className="relative aspect-[3/4] md:h-[calc(100vh-64px)] md:sticky md:top-16">
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              className="object-cover object-top"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+            />
+          </div>
+        </div>
+
+        {/* RIGHT: Size + Buy */}
+        <div className="py-6 md:py-8 md:pl-8 md:border-l" style={{ borderColor: "rgba(0,0,0,0.07)" }}>
+          {/* Mobile product info */}
+          <div className="md:hidden mb-6">
+            <p className="text-xs mb-1" style={{ color: "#b8a88a" }}>{product.category}</p>
+            <h1 className="font-serif text-2xl font-light italic mb-1" style={{ color: "#1B365D" }}>{product.name}</h1>
+            <p className="text-lg" style={{ color: "#1B365D" }}>{product.price}</p>
+          </div>
+
+          {/* Size selector */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs tracking-widest uppercase" style={{ color: "#1B365D" }}>Размер</p>
+              <button className="text-xs underline" style={{ color: "#b8a88a" }}>Таблица размеров</button>
+            </div>
+            <div className="relative">
+              <select
+                value={selectedSize}
+                onChange={(e) => setSelectedSize(e.target.value)}
+                className="w-full px-4 py-3 text-sm appearance-none border cursor-pointer focus:outline-none"
+                style={{ borderColor: "rgba(27,54,93,0.2)", color: selectedSize ? "#1B365D" : "#999" }}
+              >
+                <option value="" disabled>Выберите размер</option>
+                {product.sizes?.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: "#b8a88a" }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
           </div>
 
-          {/* Product info */}
-          <div className="flex flex-col justify-center">
-            <p className="text-xs tracking-[0.2em] uppercase text-cream-dark mb-3">
-              {product.category}
-            </p>
-            <h1 className="font-serif text-4xl md:text-5xl text-navy font-light italic mb-4">
-              {product.name}
-            </h1>
-            <p className="text-2xl text-navy mb-8">{product.price}</p>
+          {/* Add to cart */}
+          <button
+            className="w-full py-4 text-xs tracking-[0.2em] uppercase mb-3 transition-colors duration-300"
+            style={{ background: "#1B365D", color: "#D4C5A9" }}
+          >
+            Добавить в корзину
+          </button>
+          <button
+            className="w-full py-4 text-xs tracking-[0.2em] uppercase border transition-colors duration-300"
+            style={{ borderColor: "rgba(27,54,93,0.2)", color: "#1B365D" }}
+          >
+            Купить сейчас
+          </button>
 
-            <p className="text-navy/60 leading-relaxed mb-8">
-              {product.description}
-            </p>
-
-            {/* Size selector */}
-            <div className="mb-8">
-              <p className="text-xs tracking-[0.2em] uppercase text-navy/60 mb-4">
-                Размер
-              </p>
-              <div className="flex gap-3">
-                {product.sizes.map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`w-12 h-12 border text-sm transition-all duration-300 ${
-                      selectedSize === size
-                        ? "bg-navy text-cream border-navy"
-                        : "border-navy/20 text-navy hover:border-navy/40"
-                    }`}
+          {/* Mobile accordion */}
+          <div className="md:hidden mt-8 border-t" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+            {sections.map((s) => (
+              <div key={s.key} className="border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
+                <button
+                  onClick={() => setOpenSection(openSection === s.key ? null : s.key)}
+                  className="w-full flex items-center justify-between py-4 text-sm text-left"
+                  style={{ color: "#1B365D" }}
+                >
+                  {s.label}
+                  <svg
+                    className="w-3.5 h-3.5 transition-transform duration-300"
+                    style={{ transform: openSection === s.key ? "rotate(180deg)" : "rotate(0)", color: "#b8a88a" }}
+                    fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"
                   >
-                    {size}
-                  </button>
-                ))}
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {openSection === s.key && (
+                  <p className="pb-4 text-sm" style={{ color: "rgba(27,54,93,0.6)" }}>{s.content}</p>
+                )}
               </div>
-            </div>
-
-            {/* Add to cart */}
-            <button className="w-full bg-navy text-cream text-xs tracking-[0.2em] uppercase py-5 hover:bg-navy-dark transition-colors duration-300 mb-4">
-              Добавить в корзину
-            </button>
-
-            {/* Details */}
-            <div className="mt-8 pt-8 border-t border-navy/10">
-              <p className="text-xs tracking-[0.2em] uppercase text-navy/60 mb-4">
-                Детали
-              </p>
-              <ul className="space-y-2">
-                {product.details.map((detail) => (
-                  <li key={detail} className="text-sm text-navy/70 flex items-center gap-2">
-                    <span className="w-1 h-1 bg-cream-dark rounded-full" />
-                    {detail}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Shipping */}
-            <div className="mt-8 pt-8 border-t border-navy/10 space-y-3">
-              <div className="flex items-center gap-3 text-sm text-navy/60">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8" />
-                </svg>
-                Бесплатная доставка по Казахстану
-              </div>
-              <div className="flex items-center gap-3 text-sm text-navy/60">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Возврат в течение 14 дней
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>

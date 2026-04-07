@@ -14,12 +14,25 @@ interface Props {
 export default function ProductCard({ product, sizes, priority }: Props) {
   const [idx, setIdx] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  const touchStartX = useRef<number | null>(null);
 
   function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!ref.current || product.images.length <= 1) return;
     const { left, width } = ref.current.getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (e.clientX - left) / width));
     setIdx(Math.min(Math.floor(pct * product.images.length), product.images.length - 1));
+  }
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null || product.images.length <= 1) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (dx < -40) setIdx((prev) => Math.min(prev + 1, product.images.length - 1));
+    if (dx > 40) setIdx((prev) => Math.max(prev - 1, 0));
+    touchStartX.current = null;
   }
 
   return (
@@ -29,8 +42,10 @@ export default function ProductCard({ product, sizes, priority }: Props) {
         ref={ref}
         onMouseMove={onMouseMove}
         onMouseLeave={() => setIdx(0)}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
         className="relative overflow-hidden"
-        style={{ background: "#f5f5f3", aspectRatio: "3/4" }}
+        style={{ background: "#f5f5f3", aspectRatio: "3/4", touchAction: "pan-y" }}
       >
         {product.images.map((src, i) => (
           <Image

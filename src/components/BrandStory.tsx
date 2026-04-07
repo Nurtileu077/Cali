@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { SAMPLE_IMAGE } from "@/lib/products";
 
 export default function BrandStory() {
@@ -8,13 +7,13 @@ export default function BrandStory() {
       <div className="max-w-screen-xl mx-auto px-5 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-center">
           {/* Image */}
-          <div className="relative aspect-[3/4] overflow-hidden order-2 md:order-1" style={{ background: "#f5f5f3" }}>
-            <Image
+          <div className="relative overflow-hidden order-2 md:order-1" style={{ aspectRatio: "3/4", background: "#f5f5f3" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={SAMPLE_IMAGE}
               alt="Cali Couturier"
-              fill
-              className="object-cover object-top"
-              sizes="(max-width: 768px) 100vw, 50vw"
+              className="w-full h-full object-cover object-top"
+              loading="lazy"
             />
           </div>
 
@@ -26,8 +25,8 @@ export default function BrandStory() {
             <h2 className="font-serif text-4xl md:text-5xl font-light italic mb-6" style={{ color: "#1B365D" }}>
               О бренде
             </h2>
-            <div className="w-10 h-[1px] mb-8" style={{ background: "#D4C5A9" }} />
-            <div className="space-y-4 text-sm leading-relaxed mb-10" style={{ color: "rgba(27,54,93,0.65)" }}>
+            <div className="w-10 h-[1px] mb-7" style={{ background: "#D4C5A9" }} />
+            <div className="space-y-4 text-sm leading-relaxed mb-10" style={{ color: "rgba(27,54,93,0.6)" }}>
               <p>
                 Cali Couturier — бренд, рождённый из страсти к безупречному крою
                 и вниманию к каждой детали. Мы создаём одежду, которая подчёркивает

@@ -1,161 +1,231 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { products } from "@/lib/products";
-import { Suspense } from "react";
+import ProductCard from "@/components/ProductCard";
 
-const categories = ["Все", "Платья", "Костюмы", "Блузы", "Верхняя одежда", "Юбки", "Брюки", "Аксессуары"];
+const CATEGORIES = ["Все", "Платья", "Костюмы", "Блузы", "Верхняя одежда", "Юбки", "Брюки", "Аксессуары"];
+const PER_PAGE = 12;
 
-const sortOptions = [
-  { label: "По умолчанию", value: "default" },
-  { label: "По убыванию цены", value: "desc" },
-  { label: "По возрастанию цены", value: "asc" },
-];
+/* ─── Grid toggle icons ─────────────────────────────────── */
+function GridIcon2() {
+  return (
+    <svg width="20" height="16" viewBox="0 0 20 16" fill="currentColor">
+      <rect x="0" y="0" width="9" height="16" rx="0.5" />
+      <rect x="11" y="0" width="9" height="16" rx="0.5" />
+    </svg>
+  );
+}
+function GridIcon4() {
+  return (
+    <svg width="20" height="16" viewBox="0 0 20 16" fill="currentColor">
+      <rect x="0" y="0" width="4" height="7" rx="0.5" />
+      <rect x="5.3" y="0" width="4" height="7" rx="0.5" />
+      <rect x="10.6" y="0" width="4" height="7" rx="0.5" />
+      <rect x="16" y="0" width="4" height="7" rx="0.5" />
+      <rect x="0" y="9" width="4" height="7" rx="0.5" />
+      <rect x="5.3" y="9" width="4" height="7" rx="0.5" />
+      <rect x="10.6" y="9" width="4" height="7" rx="0.5" />
+      <rect x="16" y="9" width="4" height="7" rx="0.5" />
+    </svg>
+  );
+}
+function GridIcon6() {
+  return (
+    <svg width="20" height="16" viewBox="0 0 20 16" fill="currentColor">
+      {[0, 3.5, 7, 10.5, 14, 17.5].map((x) => (
+        <g key={x}>
+          <rect x={x} y="0" width="2.5" height="7" rx="0.3" />
+          <rect x={x} y="9" width="2.5" height="7" rx="0.3" />
+        </g>
+      ))}
+    </svg>
+  );
+}
 
 function CatalogContent() {
   const searchParams = useSearchParams();
-  const categoryParam = searchParams.get("category") || "Все";
+  const catParam = searchParams.get("category") || "Все";
 
   const [activeCategory, setActiveCategory] = useState(
-    categories.includes(categoryParam) ? categoryParam : "Все"
+    CATEGORIES.includes(catParam) ? catParam : "Все"
   );
-  const [sort, setSort] = useState("default");
+  const [cols, setCols] = useState<2 | 4 | 6>(4);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [gridCols, setGridCols] = useState<2 | 4>(4);
+  const [sortDir, setSortDir] = useState<"default" | "asc" | "desc">("default");
+  const [page, setPage] = useState(1);
 
   const filtered = products.filter((p) =>
     activeCategory === "Все" ? true : p.category === activeCategory
   );
 
   const sorted = [...filtered].sort((a, b) => {
-    const priceA = parseInt(a.price.replace(/\D/g, ""));
-    const priceB = parseInt(b.price.replace(/\D/g, ""));
-    if (sort === "asc") return priceA - priceB;
-    if (sort === "desc") return priceB - priceA;
+    const n = (s: string) => parseInt(s.replace(/\D/g, ""));
+    if (sortDir === "asc") return n(a.price) - n(b.price);
+    if (sortDir === "desc") return n(b.price) - n(a.price);
     return 0;
   });
 
+  const totalPages = Math.ceil(sorted.length / PER_PAGE);
+  const paginated = sorted.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  const colsClass = {
+    2: "grid-cols-2",
+    4: "grid-cols-2 md:grid-cols-4",
+    6: "grid-cols-3 md:grid-cols-6",
+  }[cols];
+
+  const iconColor = (n: number) => n === cols ? "#1B365D" : "#ccc";
+
   return (
     <div className="pt-14 md:pt-16 min-h-screen bg-white">
-      {/* Page header */}
-      <div className="border-b" style={{ borderColor: "rgba(0,0,0,0.08)" }}>
-        <div className="max-w-screen-xl mx-auto px-5 md:px-8 py-6 flex items-center justify-between">
-          <h1 className="font-serif text-2xl md:text-3xl font-light italic" style={{ color: "#1B365D" }}>
-            Каталог
-          </h1>
-          <div className="flex items-center gap-4">
-            {/* Grid toggle */}
-            <div className="hidden md:flex items-center gap-2">
-              <button onClick={() => setGridCols(2)} aria-label="2 columns">
-                <svg className="w-5 h-5" style={{ color: gridCols === 2 ? "#1B365D" : "#ccc" }} fill="currentColor" viewBox="0 0 20 20">
-                  <rect x="1" y="1" width="8" height="8" /><rect x="11" y="1" width="8" height="8" /><rect x="1" y="11" width="8" height="8" /><rect x="11" y="11" width="8" height="8" />
+
+      {/* Toolbar */}
+      <div
+        className="sticky top-14 md:top-16 z-30 flex items-center justify-between px-4 md:px-8 py-3 bg-white"
+        style={{ borderBottom: "1px solid rgba(0,0,0,0.07)" }}
+      >
+        {/* Grid toggles */}
+        <div className="flex items-center gap-3">
+          <button onClick={() => setCols(2)} aria-label="2 columns" style={{ color: iconColor(2) }}>
+            <GridIcon2 />
+          </button>
+          <button onClick={() => setCols(4)} aria-label="4 columns" style={{ color: iconColor(4) }}>
+            <GridIcon4 />
+          </button>
+          <button onClick={() => setCols(6)} aria-label="6 columns" style={{ color: iconColor(6) }}>
+            <GridIcon6 />
+          </button>
+        </div>
+
+        {/* Filter button */}
+        <button
+          onClick={() => setFilterOpen(!filterOpen)}
+          className="flex items-center gap-1.5 text-xs tracking-widest"
+          style={{ color: "#1B365D" }}
+        >
+          Фильтр
+          <span
+            className="w-1.5 h-1.5 rounded-full border"
+            style={{
+              borderColor: "#b8a88a",
+              background: activeCategory !== "Все" || sortDir !== "default" ? "#b8a88a" : "transparent",
+            }}
+          />
+        </button>
+      </div>
+
+      <div className="flex">
+        {/* Products */}
+        <div className="flex-1 min-w-0">
+          <div className={`grid gap-[1px] ${colsClass}`}>
+            {paginated.map((p, i) => (
+              <div key={p.id} className="p-2 md:p-3">
+                <ProductCard
+                  product={p}
+                  priority={i < 6}
+                  sizes={cols === 6 ? "17vw" : cols === 2 ? "50vw" : "(max-width:768px) 50vw, 25vw"}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 py-12">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="w-8 h-8 flex items-center justify-center disabled:opacity-30"
+                style={{ color: "#1B365D" }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <button onClick={() => setGridCols(4)} aria-label="4 columns">
-                <svg className="w-5 h-5" style={{ color: gridCols === 4 ? "#1B365D" : "#ccc" }} fill="currentColor" viewBox="0 0 20 20">
-                  <rect x="0" y="1" width="4" height="8" /><rect x="5.3" y="1" width="4" height="8" /><rect x="10.6" y="1" width="4" height="8" /><rect x="16" y="1" width="4" height="8" />
-                  <rect x="0" y="11" width="4" height="8" /><rect x="5.3" y="11" width="4" height="8" /><rect x="10.6" y="11" width="4" height="8" /><rect x="16" y="11" width="4" height="8" />
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className="text-sm w-8 h-8 flex items-center justify-center transition-colors"
+                  style={{
+                    color: page === i + 1 ? "#1B365D" : "rgba(27,54,93,0.35)",
+                    fontWeight: page === i + 1 ? 600 : 400,
+                    borderBottom: page === i + 1 ? "1px solid #1B365D" : "none",
+                  }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="w-8 h-8 flex items-center justify-center disabled:opacity-30"
+                style={{ color: "#1B365D" }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
             </div>
-            {/* Filter toggle */}
-            <button
-              onClick={() => setFilterOpen(!filterOpen)}
-              className="flex items-center gap-1.5 text-xs tracking-[0.1em]"
-              style={{ color: "#1B365D" }}
-            >
-              Фильтр
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: activeCategory !== "Все" ? "#b8a88a" : "transparent", border: "1px solid #b8a88a" }} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-screen-xl mx-auto px-5 md:px-8 flex gap-8">
-        {/* Products grid */}
-        <div className="flex-1 py-8">
-          <div
-            className="grid gap-3 md:gap-5"
-            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0,1fr))` }}
-          >
-            {sorted.map((p) => (
-              <Link key={p.id} href={`/product/${p.id}`} className="group block">
-                <div className="relative aspect-[3/4] overflow-hidden mb-2" style={{ background: "#f5f5f3" }}>
-                  <Image
-                    src={p.image}
-                    alt={p.name}
-                    fill
-                    className="object-cover object-top transition-transform duration-700 group-hover:scale-105"
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                  />
-                  {p.tag && (
-                    <span
-                      className="absolute top-2 left-2 text-[9px] tracking-[0.15em] uppercase px-2 py-0.5"
-                      style={{ background: "#1B365D", color: "#D4C5A9" }}
-                    >
-                      {p.tag}
-                    </span>
-                  )}
-                </div>
-                <div className="flex justify-between items-baseline mt-1">
-                  <span className="text-xs md:text-sm" style={{ color: "#1B365D" }}>{p.name}</span>
-                  <span className="text-xs ml-1 shrink-0" style={{ color: "rgba(27,54,93,0.55)" }}>{p.price}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+          )}
         </div>
 
         {/* Filter panel */}
         <div
-          className="shrink-0 py-8 transition-all duration-300 overflow-hidden"
+          className="shrink-0 overflow-hidden transition-all duration-300"
           style={{ width: filterOpen ? "260px" : "0", opacity: filterOpen ? 1 : 0 }}
         >
-          <div style={{ width: "260px" }}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-sm tracking-widest uppercase" style={{ color: "#1B365D" }}>Фильтровать по</h3>
-              <button onClick={() => setFilterOpen(false)}>
-                <svg className="w-4 h-4" style={{ color: "#999" }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+          <div
+            className="w-[260px] py-6 px-6 sticky top-28"
+            style={{ borderLeft: "1px solid rgba(0,0,0,0.07)" }}
+          >
+            <div className="flex items-center justify-between mb-8">
+              <span className="text-xs tracking-widest uppercase" style={{ color: "#1B365D" }}>
+                Фильтровать по
+              </span>
+              <button onClick={() => setFilterOpen(false)} style={{ color: "#aaa" }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             {/* Sort */}
-            <div className="mb-8">
-              <h4 className="text-xs tracking-widest uppercase mb-4" style={{ color: "#1B365D" }}>Цена</h4>
-              {sortOptions.map((o) => (
-                <label key={o.value} className="flex items-center gap-2 mb-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="sort"
-                    checked={sort === o.value}
-                    onChange={() => setSort(o.value)}
-                    className="accent-[#1B365D]"
-                  />
-                  <span className="text-sm" style={{ color: "#444" }}>{o.label}</span>
-                </label>
-              ))}
-            </div>
+            <p className="text-[10px] tracking-widest uppercase mb-4" style={{ color: "#1B365D" }}>Цена</p>
+            {(["default", "desc", "asc"] as const).map((v, i) => (
+              <label key={v} className="flex items-center gap-2 mb-3 cursor-pointer">
+                <span
+                  className="w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0"
+                  style={{ borderColor: sortDir === v ? "#1B365D" : "#ccc" }}
+                >
+                  {sortDir === v && <span className="w-2 h-2 rounded-full block" style={{ background: "#1B365D" }} />}
+                </span>
+                <span className="text-sm" style={{ color: "#444" }}>
+                  {["По умолчанию", "По убыванию", "По возрастанию"][i]}
+                </span>
+              </label>
+            ))}
 
             {/* Categories */}
-            <div>
-              <h4 className="text-xs tracking-widest uppercase mb-4" style={{ color: "#1B365D" }}>Категории</h4>
-              {categories.slice(1).map((cat) => (
-                <label key={cat} className="flex items-center gap-2 mb-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={activeCategory === cat}
-                    onChange={() => setActiveCategory(activeCategory === cat ? "Все" : cat)}
-                    className="accent-[#1B365D]"
-                  />
-                  <span className="text-sm" style={{ color: "#444" }}>{cat}</span>
-                </label>
-              ))}
-            </div>
+            <p className="text-[10px] tracking-widest uppercase mb-4 mt-8" style={{ color: "#1B365D" }}>Категории</p>
+            {CATEGORIES.slice(1).map((cat) => (
+              <label key={cat} className="flex items-center gap-2 mb-3 cursor-pointer">
+                <span
+                  className="w-3.5 h-3.5 border flex items-center justify-center shrink-0"
+                  style={{ borderColor: activeCategory === cat ? "#1B365D" : "#ddd" }}
+                  onClick={() => { setActiveCategory(activeCategory === cat ? "Все" : cat); setPage(1); }}
+                >
+                  {activeCategory === cat && (
+                    <svg className="w-2.5 h-2.5" style={{ color: "#1B365D" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </span>
+                <span className="text-sm" style={{ color: "#444" }}>{cat}</span>
+              </label>
+            ))}
           </div>
         </div>
       </div>
@@ -165,7 +235,7 @@ function CatalogContent() {
 
 export default function CatalogPage() {
   return (
-    <Suspense fallback={<div className="pt-20 text-center">Загрузка...</div>}>
+    <Suspense fallback={<div className="pt-20 flex items-center justify-center min-h-screen" style={{ color: "#1B365D" }}>Загрузка...</div>}>
       <CatalogContent />
     </Suspense>
   );
